@@ -2,35 +2,41 @@
 # export PATH=$HOME/bin:/usr/local/bin:$PATH
 
 # Path to your oh-my-zsh installation.
-export ZSH="/Users/michael/.oh-my-zsh"
+export ZSH="/home/chauncey/.oh-my-zsh"
 
-# Set name of the theme to load. Optionally, if you set this to "random"
-# it'll load a random theme each time that oh-my-zsh is loaded.
+# Set name of the theme to load --- if set to "random", it will
+# load a random theme each time oh-my-zsh is loaded, in which case,
+# to know which specific one was loaded, run: echo $RANDOM_THEME
 # See https://github.com/robbyrussell/oh-my-zsh/wiki/Themes
-# ZSH_THEME="steeef"
-#ZSH_THEME="agnoster"
-ZSH_THEME="ys"
+ZSH_THEME="agnoster"
+DEFAULT_USER="chauncey"
+prompt_context(){}
 
-# Set list of themes to load
-# Setting this variable when ZSH_THEME=random
-# cause zsh load theme from this variable instead of
-# looking in ~/.oh-my-zsh/themes/
-# An empty array have no effect
+# Set list of themes to pick from when loading at random
+# Setting this variable when ZSH_THEME=random will cause zsh to load
+# a theme from this variable instead of looking in ~/.oh-my-zsh/themes/
+# If set to an empty array, this variable will have no effect.
 # ZSH_THEME_RANDOM_CANDIDATES=( "robbyrussell" "agnoster" )
 
 # Uncomment the following line to use case-sensitive completion.
 # CASE_SENSITIVE="true"
 
-# Uncomment the following line to use hyphen-insensitive completion. Case
-# sensitive completion must be off. _ and - will be interchangeable.
+# Uncomment the following line to use hyphen-insensitive completion.
+# Case-sensitive completion must be off. _ and - will be interchangeable.
 # HYPHEN_INSENSITIVE="true"
 
 # Uncomment the following line to disable bi-weekly auto-update checks.
 # DISABLE_AUTO_UPDATE="true"
 
+# Uncomment the following line to automatically update without prompting.
+# DISABLE_UPDATE_PROMPT="true"
+
 # Uncomment the following line to change how often to auto-update (in days).
-# 自动更新的时间间隔，单位是天
-export UPDATE_ZSH_DAYS=30
+# 自动更新时间间隔，单位“天”
+export UPDATE_ZSH_DAYS=13
+
+# Uncomment the following line if pasting URLs and other text is messed up.
+# DISABLE_MAGIC_FUNCTIONS=true
 
 # Uncomment the following line to disable colors in ls.
 # DISABLE_LS_COLORS="true"
@@ -55,30 +61,27 @@ export UPDATE_ZSH_DAYS=30
 # "mm/dd/yyyy"|"dd.mm.yyyy"|"yyyy-mm-dd"
 # or set a custom format using the strftime function format specifications,
 # see 'man strftime' for details.
-# 历史命令日期显示格式
+#历史命令显示时间格式
 HIST_STAMPS="yyyy-mm-dd"
 
 # Would you like to use another custom folder than $ZSH/custom?
 # ZSH_CUSTOM=/path/to/new-custom-folder
 
-# Which plugins would you like to load? (plugins can be found in ~/.oh-my-zsh/plugins/*)
+# Which plugins would you like to load?
+# Standard plugins can be found in ~/.oh-my-zsh/plugins/*
 # Custom plugins may be added to ~/.oh-my-zsh/custom/plugins/
 # Example format: plugins=(rails git textmate ruby lighthouse)
 # Add wisely, as too many plugins slow down shell startup.
 plugins=(
-   cp
-   extract
-   git 
-   git-open
-   autojump
-   zsh-autosuggestions
-   zsh-syntax-highlighting
+	git
+	cp
+	extract
+	autojump
+	zsh-autosuggestions
+	zsh-syntax-highlighting
 )
 
 source $ZSH/oh-my-zsh.sh
-
-# 补全快捷键重设
-#bindkey ',' autosuggest-accept
 
 # User configuration
 
@@ -97,9 +100,6 @@ source $ZSH/oh-my-zsh.sh
 # Compilation flags
 # export ARCHFLAGS="-arch x86_64"
 
-# ssh
-# export SSH_KEY_PATH="~/.ssh/rsa_id"
-
 # Set personal aliases, overriding those provided by oh-my-zsh libs,
 # plugins, and themes. Aliases can be placed here, though oh-my-zsh
 # users are encouraged to define aliases within the ZSH_CUSTOM folder.
@@ -113,7 +113,6 @@ alias gz="tar -zxvf"
 alias cp="cp -i"
 alias mvim='mvim -v'
 
-
 alias ga="git add"
 alias gd="git diff"
 alias gf="git fetch"
@@ -123,18 +122,6 @@ alias gc="git commit -m"
 alias gco="git checkout"
 alias hp="hexo clean && hexo g && hexo d"
 
-# added by Anaconda3 5.2.0 installer
-export PATH="/Users/michael/anaconda3/bin:$PATH"
-
-# maven 3.5.4
-export PATH="/Users/michael/app/maven/bin:$PATH"
-export LC_ALL=en_US.UTF-8  
-export LANG=en_US.UTF-8
-
-# git for hexo
-export PATH="/usr/bin/git:$PATH"
-export HOMEBREW_BOTTLE_DOMAIN=https://mirrors.ustc.edu.cn/homebrew-bottles
-export PATH="/usr/local/sbin:$PATH"
-
-# brew vim
-export PATH="/usr/local/Cellar/vim/8.1.0550/bin:$PATH"
+source ~/.oh-my-zsh/plugins/incr/incr*.zsh
+#arch 使用 pacman 安装需要加入这行代码
+[[ -s /etc/profile.d/autojump.sh ]] && . /etc/profile.d/autojump.sh
