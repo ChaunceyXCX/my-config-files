@@ -1,12 +1,3 @@
-#!/bin/bash
-###
- # @Date: 2024-07-02 11:43:56
- # @LastEditors: chaunceyxie chaunceyxcx@gmail.com
- # @LastEditTime: 2024-07-02 14:21:35
- # @FilePath: \my-notes\src\linux\美化\debian_zsh.sh
- # @Description: 
-### 
-
 # 定义变量
 GITHUB_URL="https://raw.githubusercontent.com/ChaunceyXCX/my-config-files/master/zsh/.zshrc"
 TARGET_FILE="~/.zshrc"
