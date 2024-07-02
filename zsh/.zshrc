@@ -2,14 +2,14 @@
 # export PATH=$HOME/bin:/usr/local/bin:$PATH
 
 # Path to your oh-my-zsh installation.
-export ZSH="/home/chauncey/.oh-my-zsh"
+export ZSH="/root/.oh-my-zsh"
 
 # Set name of the theme to load --- if set to "random", it will
 # load a random theme each time oh-my-zsh is loaded, in which case,
 # to know which specific one was loaded, run: echo $RANDOM_THEME
 # See https://github.com/robbyrussell/oh-my-zsh/wiki/Themes
 ZSH_THEME="agnoster"
-DEFAULT_USER="chauncey"
+DEFAULT_USER="root"
 prompt_context(){}
 
 # Set list of themes to pick from when loading at random
@@ -122,6 +122,8 @@ alias gc="git commit -m"
 alias gco="git checkout"
 alias hp="hexo clean && hexo g && hexo d"
 
+alias cat="bat"
+
 source ~/.oh-my-zsh/plugins/incr/incr*.zsh
 #arch 使用 pacman 安装需要加入这行代码
-[[ -s /etc/profile.d/autojump.sh ]] && . /etc/profile.d/autojump.sh
+#[[ -s /etc/profile.d/autojump.sh ]] && . /etc/profile.d/autojump.sh
