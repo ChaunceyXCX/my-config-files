@@ -17,7 +17,7 @@ if command -v zsh >/dev/null 2>&1; then
     echo "已安装 zsh"
 else
     echo "未安装 zsh，开始安装"
-    apt-get install -y zsh
+    apt-get update && apt-get install -y zsh
 fi
 
 # 继续执行其他操作
