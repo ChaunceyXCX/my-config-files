@@ -6,7 +6,7 @@ TEMP_FILE="temp_zshrc"
 # 检查当前 shell 是否为 zsh
 if [ "$SHELL" = "/bin/zsh" ] || [ "$SHELL" = "/usr/bin/zsh" ]; then
     echo "当前 shell 是 zsh，脚本退出"
-    exit 0
+#    exit 0
 fi
 
 # 继续执行其他操作
@@ -67,3 +67,5 @@ apt-get install -y autojump
 echo "已安装 autojump"
 
 source ~/.zshrc
+
+
