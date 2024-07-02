@@ -67,5 +67,3 @@ apt-get install -y autojump
 echo "已安装 autojump"
 
 source ~/.zshrc
-
-
