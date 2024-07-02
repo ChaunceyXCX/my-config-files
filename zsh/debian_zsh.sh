@@ -66,4 +66,6 @@ echo "已安装 incr-0.2.zsh || 自动补全"
 apt-get install -y autojump
 echo "已安装 autojump"
 
+source ~/.zshrc
+
 
