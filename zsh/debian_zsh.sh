@@ -1,70 +1,5 @@
 #!/bin/bash
 
-# 获取实际用户信息
-get_real_user() {
-    REAL_USER="root"
-    REAL_HOME="/root"
-    print_info "强制使用root用户配置"
-    print_info "用户主目录: $REAL_HOME"
-}
-
-# 安装oh-my-zsh
-install_oh_my_zsh() {
-    print_info "=== 安装Oh My Zsh ==="
-    
-    local oh_my_zsh_dir="$REAL_HOME/.oh-my-zsh"
-    
-    if [ -d "$oh_my_zsh_dir" ]; then
-        print_warning "Oh My Zsh 已存在，跳过安装"
-        return
-    fi
-    
-    print_info "正在安装Oh My Zsh..."
-    # 移除sudo -u切换用户
-    git clone https://github.com/robbyrussell/oh-my-zsh.git "$oh_my_zsh_dir"
-    print_success "Oh My Zsh 安装完成"
-}
-
-# 下载和配置.zshrc
-configure_zshrc() {
-    // ... 其他代码保持不变 ...
-    
-    # 处理目标文件（移除sudo切换用户）
-    if [ ! -f "$target_file" ]; then
-        print_info "$target_file 不存在，正在创建..."
-        touch "$target_file"
-    else
-        print_info "$target_file 已存在，将追加内容"
-    fi
-    
-    # 插入文件内容（移除权限修改）
-    cat "$temp_file" >> "$target_file"
-    // ... 后续代码保持不变 ...
-}
-
-# 安装zsh插件
-install_zsh_plugins() {
-    // ... 其他代码保持不变 ...
-    
-    # 语法高亮插件（移除sudo切换用户）
-    if [ ! -d "$plugins_dir/zsh-syntax-highlighting" ]; then
-        print_info "安装zsh-syntax-highlighting插件..."
-        git clone https://github.com/zsh-users/zsh-syntax-highlighting.git "$plugins_dir/zsh-syntax-highlighting"
-        print_success "zsh-syntax-highlighting 安装完成"
-    fi
-    
-    # 自动补全插件（移除sudo切换用户）
-    if [ ! -d "$plugins_dir/incr" ]; then
-        print_info "安装incr自动补全插件..."
-        local incr_file="/tmp/incr-0.2.zsh"
-        wget -O "$incr_file" http://mimosa-pudica.net/src/incr-0.2.zsh
-        mkdir -p "$plugins_dir/incr"
-        mv "$incr_file" "$plugins_dir/incr/"
-        print_success "incr自动补全插件安装完成"
-    fi
-}
-#!/bin/bash
-
 # 整合版 ZSH 配置脚本
 # 包含依赖检查、安装和配置
 
@@ -254,15 +189,6 @@ install_zsh_plugins() {
     
     local plugins_dir="$REAL_HOME/.oh-my-zsh/plugins"
     
-    # 自动建议插件
-    # if [ ! -d "$plugins_dir/zsh-autosuggestions" ]; then
-    #     print_info "安装zsh-autosuggestions插件..."
-    #     sudo -u "$REAL_USER" git clone https://github.com/zsh-users/zsh-autosuggestions "$plugins_dir/zsh-autosuggestions"
-    #     print_success "zsh-autosuggestions 安装完成"
-    # else
-    #     print_success "zsh-autosuggestions 已存在"
-    # fi
-    
     # 语法高亮插件
     if [ ! -d "$plugins_dir/zsh-syntax-highlighting" ]; then
         print_info "安装zsh-syntax-highlighting插件..."
@@ -293,10 +219,8 @@ show_completion_info() {
     print_info "安装的组件："
     echo "  ✅ ZSH shell"
     echo "  ✅ Oh My Zsh"
-    # echo "  ✅ zsh-autosuggestions (自动建议)"
     echo "  ✅ zsh-syntax-highlighting (语法高亮)" 
     echo "  ✅ incr (自动补全)"
-    # echo "  ✅ bat (高亮版cat)"
     echo "  ✅ autojump (目录跳转)"
     echo
     print_warning "重要提醒："
@@ -305,7 +229,6 @@ show_completion_info() {
     echo "  3. 配置文件位置: $REAL_HOME/.zshrc"
     echo
     print_info "常用命令："
-    echo "  - 使用 'bat' 代替 'cat' 查看文件"
     echo "  - 使用 'j <目录名>' 快速跳转目录"
     echo "  - 输入命令时会有自动建议（按右箭头接受）"
     echo
