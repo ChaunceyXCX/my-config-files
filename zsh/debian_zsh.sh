@@ -1,76 +1,280 @@
-# 定义变量
-GITHUB_URL="https://raw.githubusercontent.com/ChaunceyXCX/my-config-files/master/zsh/.zshrc"
-TARGET_FILE="$HOME/.zshrc"
-TEMP_FILE="temp_zshrc"
+#!/bin/bash
 
-# 检查当前 shell 是否为 zsh
-if [ "$SHELL" = "/bin/zsh" ] || [ "$SHELL" = "/usr/bin/zsh" ]; then
-    echo "当前 shell 是 zsh，脚本退出"
-#    exit 0
-fi
+# 整合版 ZSH 配置脚本
+# 包含依赖检查、安装和配置
 
-# 继续执行其他操作
-echo "当前 shell 不是 zsh，继续执行脚本"
+set -e  # 遇到错误时退出
 
-# 检查是否安装了 zsh
-if command -v zsh >/dev/null 2>&1; then
-    echo "已安装 zsh"
-else
-    echo "未安装 zsh，开始安装"
-    apt-get update && apt-get install -y zsh
-fi
+# 颜色定义
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
 
-# 继续执行其他操作
-echo "继续执行脚本..."
+# 打印函数
+print_info() {
+    echo -e "${BLUE}[INFO]${NC} $1"
+}
 
+print_success() {
+    echo -e "${GREEN}[SUCCESS]${NC} $1"
+}
 
-chsh -s /bin/zsh
-echo "已设置 zsh 为默认 shell"
-git clone https://github.com/robbyrussell/oh-my-zsh.git $HOME/.oh-my-zsh
-echo "已安装 oh-my-zsh"
+print_warning() {
+    echo -e "${YELLOW}[WARNING]${NC} $1"
+}
 
+print_error() {
+    echo -e "${RED}[ERROR]${NC} $1"
+}
 
-# 下载文件
-curl -o $TEMP_FILE $GITHUB_URL
+# 检查是否为root用户
+check_root() {
+    if [ "$EUID" -ne 0 ]; then
+        print_error "此脚本需要root权限运行"
+        print_info "请使用: sudo $0"
+        exit 1
+    fi
+}
 
-# 检查下载是否成功
-if [ $? -ne 0 ]; then
-    echo "zshrc配置文件下载失败"
-    exit 1
-fi
+# 检查系统是否为Debian
+check_debian() {
+    if [ ! -f /etc/debian_version ]; then
+        print_error "此脚本仅支持Debian系统"
+        exit 1
+    fi
+    print_success "检测到Debian系统"
+}
 
-if [ ! -f "$TARGET_FILE" ]; then
-    echo "$TARGET_FILE 不存在，正在创建..."
-    touch "$TARGET_FILE"
-else
-    echo "$TARGET_FILE 已存在。"
-fi
+# 检查命令是否存在
+command_exists() {
+    command -v "$1" >/dev/null 2>&1
+}
 
-# 插入文件内容到目标文件
-cat $TEMP_FILE >> $TARGET_FILE
+# 检查包是否已安装
+package_installed() {
+    dpkg -l | grep -q "^ii  $1 " 2>/dev/null
+}
 
-# 删除临时文件
-rm $TEMP_FILE
+# 安装单个包
+install_package() {
+    local package=$1
+    if package_installed "$package"; then
+        print_success "$package 已安装"
+    else
+        print_info "正在安装 $package..."
+        apt-get install -y "$package"
+        print_success "$package 安装完成"
+    fi
+}
 
-echo "文件内容已插入到 $TARGET_FILE 中"
+# 检查和安装依赖项
+install_dependencies() {
+    print_info "=== 检查和安装依赖项 ==="
+    
+    # 更新包列表
+    print_info "更新软件包列表..."
+    apt-get update
+    
+    # 必需的软件包
+    local packages=(
+        "zsh"
+        "git" 
+        "curl"
+        "wget"
+        "bat"
+        "autojump"
+    )
+    
+    # 安装软件包
+    for package in "${packages[@]}"; do
+        install_package "$package"
+    done
+    
+    print_success "所有依赖项安装完成"
+}
 
-#自动推荐
-git clone https://github.com/zsh-users/zsh-autosuggestions $HOME/.oh-my-zsh/plugins/zsh-autosuggestions
-echo "已安装 zsh-autosuggestions || 自动推荐"
+# 获取实际用户信息
+get_real_user() {
+    if [ -n "$SUDO_USER" ]; then
+        REAL_USER="$SUDO_USER"
+        REAL_HOME="/home/$SUDO_USER"
+    else
+        REAL_USER="root"
+        REAL_HOME="/root"
+    fi
+    print_info "配置用户: $REAL_USER"
+    print_info "用户主目录: $REAL_HOME"
+}
 
-#高亮
-git clone https://github.com/zsh-users/zsh-syntax-highlighting.git $HOME/.oh-my-zsh/plugins/zsh-syntax-highlighting
-echo "已安装 zsh-syntax-highlighting"
+# 检查当前shell
+check_current_shell() {
+    local current_shell=$(getent passwd "$REAL_USER" | cut -d: -f7)
+    print_info "当前用户 $REAL_USER 的shell: $current_shell"
+    
+    if [ "$current_shell" = "/bin/zsh" ] || [ "$current_shell" = "/usr/bin/zsh" ]; then
+        print_warning "当前shell已经是zsh"
+        return 0
+    else
+        print_info "当前shell不是zsh，需要切换"
+        return 1
+    fi
+}
 
-#高亮版cat
-apt-get install -y bat
-echo "已安装 bat || 高亮版cat"
+# 安装zsh
+install_zsh() {
+    print_info "=== 配置ZSH ==="
+    
+    # 设置zsh为默认shell
+    print_info "设置zsh为默认shell..."
+    chsh -s /bin/zsh "$REAL_USER"
+    print_success "已设置zsh为 $REAL_USER 的默认shell"
+}
 
-#自动补全
-wget http://mimosa-pudica.net/src/incr-0.2.zsh && mkdir $HOME/.oh-my-zsh/plugins/incr/ && mv ./incr-0.2.zsh $HOME/.oh-my-zsh/plugins/incr/
-echo "已安装 incr-0.2.zsh || 自动补全"
-#autjump
-apt-get install -y autojump
-echo "已安装 autojump"
+# 安装oh-my-zsh
+install_oh_my_zsh() {
+    print_info "=== 安装Oh My Zsh ==="
+    
+    local oh_my_zsh_dir="$REAL_HOME/.oh-my-zsh"
+    
+    if [ -d "$oh_my_zsh_dir" ]; then
+        print_warning "Oh My Zsh 已存在，跳过安装"
+        return
+    fi
+    
+    print_info "正在安装Oh My Zsh..."
+    # 使用sudo -u切换到目标用户执行git clone
+    sudo -u "$REAL_USER" git clone https://github.com/robbyrussell/oh-my-zsh.git "$oh_my_zsh_dir"
+    print_success "Oh My Zsh 安装完成"
+}
 
-source $HOME/.zshrc
+# 下载和配置.zshrc
+configure_zshrc() {
+    print_info "=== 配置.zshrc ==="
+    
+    local github_url="https://raw.githubusercontent.com/ChaunceyXCX/my-config-files/master/zsh/.zshrc"
+    local target_file="$REAL_HOME/.zshrc"
+    local temp_file="/tmp/temp_zshrc"
+    
+    # 下载配置文件
+    print_info "下载zshrc配置文件..."
+    curl -o "$temp_file" "$github_url"
+    
+    if [ $? -ne 0 ]; then
+        print_error "zshrc配置文件下载失败"
+        return 1
+    fi
+    
+    # 处理目标文件
+    if [ ! -f "$target_file" ]; then
+        print_info "$target_file 不存在，正在创建..."
+        sudo -u "$REAL_USER" touch "$target_file"
+    else
+        print_info "$target_file 已存在，将追加内容"
+    fi
+    
+    # 插入文件内容
+    cat "$temp_file" >> "$target_file"
+    chown "$REAL_USER:$REAL_USER" "$target_file"
+    
+    # 删除临时文件
+    rm "$temp_file"
+    
+    print_success "zshrc配置完成"
+}
+
+# 安装zsh插件
+install_zsh_plugins() {
+    print_info "=== 安装ZSH插件 ==="
+    
+    local plugins_dir="$REAL_HOME/.oh-my-zsh/plugins"
+    
+    # 自动建议插件
+    # if [ ! -d "$plugins_dir/zsh-autosuggestions" ]; then
+    #     print_info "安装zsh-autosuggestions插件..."
+    #     sudo -u "$REAL_USER" git clone https://github.com/zsh-users/zsh-autosuggestions "$plugins_dir/zsh-autosuggestions"
+    #     print_success "zsh-autosuggestions 安装完成"
+    # else
+    #     print_success "zsh-autosuggestions 已存在"
+    # fi
+    
+    # 语法高亮插件
+    if [ ! -d "$plugins_dir/zsh-syntax-highlighting" ]; then
+        print_info "安装zsh-syntax-highlighting插件..."
+        sudo -u "$REAL_USER" git clone https://github.com/zsh-users/zsh-syntax-highlighting.git "$plugins_dir/zsh-syntax-highlighting"
+        print_success "zsh-syntax-highlighting 安装完成"
+    else
+        print_success "zsh-syntax-highlighting 已存在"
+    fi
+    
+    # 自动补全插件
+    if [ ! -d "$plugins_dir/incr" ]; then
+        print_info "安装incr自动补全插件..."
+        local incr_file="/tmp/incr-0.2.zsh"
+        wget -O "$incr_file" http://mimosa-pudica.net/src/incr-0.2.zsh
+        sudo -u "$REAL_USER" mkdir -p "$plugins_dir/incr"
+        mv "$incr_file" "$plugins_dir/incr/"
+        chown -R "$REAL_USER:$REAL_USER" "$plugins_dir/incr"
+        print_success "incr自动补全插件安装完成"
+    else
+        print_success "incr自动补全插件已存在"
+    fi
+}
+
+# 显示完成信息
+show_completion_info() {
+    print_success "=== ZSH配置完成 ==="
+    echo
+    print_info "安装的组件："
+    echo "  ✅ ZSH shell"
+    echo "  ✅ Oh My Zsh"
+    # echo "  ✅ zsh-autosuggestions (自动建议)"
+    echo "  ✅ zsh-syntax-highlighting (语法高亮)" 
+    echo "  ✅ incr (自动补全)"
+    echo "  ✅ bat (高亮版cat)"
+    echo "  ✅ autojump (目录跳转)"
+    echo
+    print_warning "重要提醒："
+    echo "  1. 需要重新登录或重启终端才能使用zsh"
+    echo "  2. 首次使用zsh时会有配置向导"
+    echo "  3. 配置文件位置: $REAL_HOME/.zshrc"
+    echo
+    print_info "常用命令："
+    echo "  - 使用 'bat' 代替 'cat' 查看文件"
+    echo "  - 使用 'j <目录名>' 快速跳转目录"
+    echo "  - 输入命令时会有自动建议（按右箭头接受）"
+    echo
+}
+
+# 主函数
+main() {
+    echo
+    print_info "=== ZSH一键配置脚本 ==="
+    print_info "适用于Debian系统"
+    echo
+    
+    # 检查系统
+    check_root
+    check_debian
+    get_real_user
+    
+    # 安装依赖
+    install_dependencies
+    
+    # 配置zsh
+    check_current_shell
+    install_zsh
+    install_oh_my_zsh
+    configure_zshrc
+    install_zsh_plugins
+    
+    # 显示完成信息
+    show_completion_info
+    
+    print_success "脚本执行完成！"
+    print_info "请重新登录以使用zsh"
+}
+
+# 运行主函数
+main "$@"
