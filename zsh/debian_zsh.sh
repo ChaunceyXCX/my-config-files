@@ -146,7 +146,6 @@ install_dependencies() {
         "git" 
         "curl"
         "wget"
-        # "bat"
         "autojump"
     )
     
