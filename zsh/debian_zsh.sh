@@ -1,3 +1,5 @@
+#!/bin/bash
+
 # 获取实际用户信息
 get_real_user() {
     REAL_USER="root"
