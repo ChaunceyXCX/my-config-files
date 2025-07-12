@@ -83,7 +83,7 @@ install_dependencies() {
         "git" 
         "curl"
         "wget"
-        "bat"
+        # "bat"
         "autojump"
     )
     
@@ -232,7 +232,7 @@ show_completion_info() {
     # echo "  ✅ zsh-autosuggestions (自动建议)"
     echo "  ✅ zsh-syntax-highlighting (语法高亮)" 
     echo "  ✅ incr (自动补全)"
-    echo "  ✅ bat (高亮版cat)"
+    # echo "  ✅ bat (高亮版cat)"
     echo "  ✅ autojump (目录跳转)"
     echo
     print_warning "重要提醒："
