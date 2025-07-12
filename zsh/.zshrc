@@ -77,7 +77,7 @@ plugins=(
 	cp
 	extract
 	autojump
-	zsh-autosuggestions
+	# zsh-autosuggestions
 	zsh-syntax-highlighting
 )
 
@@ -122,7 +122,7 @@ alias gc="git commit -m"
 alias gco="git checkout"
 alias hp="hexo clean && hexo g && hexo d"
 
-alias cat="bat"
+# alias cat="bat"
 
 source ~/.oh-my-zsh/plugins/incr/incr*.zsh
 #arch 使用 pacman 安装需要加入这行代码
