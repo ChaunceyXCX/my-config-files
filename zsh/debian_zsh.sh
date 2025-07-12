@@ -144,7 +144,7 @@ install_oh_my_zsh() {
     
     print_info "正在安装Oh My Zsh..."
     # 使用sudo -u切换到目标用户执行git clone
-    sudo -u "$REAL_USER" git clone https://github.com/robbyrussell/oh-my-zsh.git "$oh_my_zsh_dir"
+    git clone https://github.com/robbyrussell/oh-my-zsh.git "$oh_my_zsh_dir"
     print_success "Oh My Zsh 安装完成"
 }
 
@@ -168,7 +168,7 @@ configure_zshrc() {
     # 处理目标文件
     if [ ! -f "$target_file" ]; then
         print_info "$target_file 不存在，正在创建..."
-        sudo -u "$REAL_USER" touch "$target_file"
+        touch "$target_file"
     else
         print_info "$target_file 已存在，将追加内容"
     fi
@@ -192,7 +192,7 @@ install_zsh_plugins() {
     # 语法高亮插件
     if [ ! -d "$plugins_dir/zsh-syntax-highlighting" ]; then
         print_info "安装zsh-syntax-highlighting插件..."
-        sudo -u "$REAL_USER" git clone https://github.com/zsh-users/zsh-syntax-highlighting.git "$plugins_dir/zsh-syntax-highlighting"
+        git clone https://github.com/zsh-users/zsh-syntax-highlighting.git "$plugins_dir/zsh-syntax-highlighting"
         print_success "zsh-syntax-highlighting 安装完成"
     else
         print_success "zsh-syntax-highlighting 已存在"
@@ -203,7 +203,7 @@ install_zsh_plugins() {
         print_info "安装incr自动补全插件..."
         local incr_file="/tmp/incr-0.2.zsh"
         wget -O "$incr_file" http://mimosa-pudica.net/src/incr-0.2.zsh
-        sudo -u "$REAL_USER" mkdir -p "$plugins_dir/incr"
+        mkdir -p "$plugins_dir/incr"
         mv "$incr_file" "$plugins_dir/incr/"
         chown -R "$REAL_USER:$REAL_USER" "$plugins_dir/incr"
         print_success "incr自动补全插件安装完成"
