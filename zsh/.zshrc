@@ -2,14 +2,14 @@
 # export PATH=$HOME/bin:/usr/local/bin:$PATH
 
 # Path to your oh-my-zsh installation.
-export ZSH="/root/.oh-my-zsh"
+export ZSH="$HOME/.oh-my-zsh"
 
 # Set name of the theme to load --- if set to "random", it will
 # load a random theme each time oh-my-zsh is loaded, in which case,
 # to know which specific one was loaded, run: echo $RANDOM_THEME
 # See https://github.com/robbyrussell/oh-my-zsh/wiki/Themes
-ZSH_THEME="agnoster"
-DEFAULT_USER="root"
+ZSH_THEME="powerlevel10k/powerlevel10k"
+DEFAULT_USER="$USER"
 prompt_context(){}
 
 # Set list of themes to pick from when loading at random
@@ -77,7 +77,7 @@ plugins=(
 	cp
 	extract
 	autojump
-	# zsh-autosuggestions
+	zsh-autosuggestions
 	zsh-syntax-highlighting
 )
 
@@ -106,9 +106,10 @@ source $ZSH/oh-my-zsh.sh
 # For a full list of active aliases, run `alias`.
 #
 # Example aliases
-# alias zshconfig="mate ~/.zshrc"
-# alias ohmyzsh="mate ~/.oh-my-zsh"
+alias zshconfig="nano ~/.zshrc"
+alias ohmyzsh="nano ~/.oh-my-zsh"
 alias ll="ls -l"
+alias lls="ls -la"
 alias gz="tar -zxvf"
 alias cp="cp -i"
 alias mvim='mvim -v'
@@ -120,10 +121,8 @@ alias gp="git push"
 alias gs="git status"
 alias gc="git commit -m"
 alias gco="git checkout"
-alias hp="hexo clean && hexo g && hexo d"
 
 # alias cat="bat"
 
-source ~/.oh-my-zsh/plugins/incr/incr*.zsh
 #arch 使用 pacman 安装需要加入这行代码
 #[[ -s /etc/profile.d/autojump.sh ]] && . /etc/profile.d/autojump.sh

@@ -84,6 +84,7 @@ install_dependencies() {
         "curl"
         "wget"
         "autojump"
+        "fontconfig"
     )
     
     # 安装软件包
@@ -121,14 +122,24 @@ check_current_shell() {
     fi
 }
 
-# 安装zsh
+# 安装并配置zsh
 install_zsh() {
+    # 检查zsh是否已安装
+    if command_exists zsh; then
+        print_success "zsh 已安装"
+    else
+        print_info "正在安装zsh..."
+        apt-get install -y zsh
+        print_success "zsh 安装完成"
+    fi
+
     print_info "=== 配置ZSH ==="
-    
     # 设置zsh为默认shell
     print_info "设置zsh为默认shell..."
     chsh -s /bin/zsh "$REAL_USER"
     print_success "已设置zsh为 $REAL_USER 的默认shell"
+    # 提醒注销重新打开终端
+    print_warning "请注销并重新打开终端使zsh生效"
 }
 
 # 安装oh-my-zsh
@@ -146,6 +157,36 @@ install_oh_my_zsh() {
     # 使用sudo -u切换到目标用户执行git clone
     git clone https://github.com/robbyrussell/oh-my-zsh.git "$oh_my_zsh_dir"
     print_success "Oh My Zsh 安装完成"
+
+    # 安装powerlevel10k主题
+    print_info "正在安装powerlevel10k主题..."
+    git clone https://github.com/romkatv/powerlevel10k.git "$oh_my_zsh_dir/themes/powerlevel10k"
+    print_success "powerlevel10k主题安装完成"
+}
+
+# 安装 MesloLGS NF 字体
+install_fonts() {
+    print_info "=== 安装 MesloLGS NF 字体 ==="
+    
+    local font_dir="/usr/share/fonts/truetype/meslo"
+    
+    if [ -d "$font_dir" ]; then
+        print_warning "MesloLGS NF 字体目录已存在，跳过安装"
+        return
+    fi
+    
+    print_info "正在下载 MesloLGS NF 字体..."
+    mkdir -p "$font_dir"
+    
+    local base_url="https://github.com/romkatv/powerlevel10k-media/raw/master"
+    wget -q --show-progress -O "$font_dir/MesloLGS NF Regular.ttf" "$base_url/MesloLGS%20NF%20Regular.ttf"
+    wget -q --show-progress -O "$font_dir/MesloLGS NF Bold.ttf" "$base_url/MesloLGS%20NF%20Bold.ttf"
+    wget -q --show-progress -O "$font_dir/MesloLGS NF Italic.ttf" "$base_url/MesloLGS%20NF%20Italic.ttf"
+    wget -q --show-progress -O "$font_dir/MesloLGS NF Bold Italic.ttf" "$base_url/MesloLGS%20NF%20Bold%20Italic.ttf"
+    
+    print_info "更新字体缓存..."
+    fc-cache -f -v "$font_dir" > /dev/null 2>&1
+    print_success "MesloLGS NF 字体安装完成"
 }
 
 # 下载和配置.zshrc
@@ -189,6 +230,15 @@ install_zsh_plugins() {
     
     local plugins_dir="$REAL_HOME/.oh-my-zsh/plugins"
     
+    # 自动提示插件
+    if [ ! -d "$plugins_dir/zsh-autosuggestions" ]; then
+        print_info "安装zsh-autosuggestions插件..."
+        git clone https://github.com/zsh-users/zsh-autosuggestions.git "$plugins_dir/zsh-autosuggestions"
+        print_success "zsh-autosuggestions 安装完成"
+    else
+        print_success "zsh-autosuggestions 已存在"
+    fi
+
     # 语法高亮插件
     if [ ! -d "$plugins_dir/zsh-syntax-highlighting" ]; then
         print_info "安装zsh-syntax-highlighting插件..."
@@ -196,19 +246,6 @@ install_zsh_plugins() {
         print_success "zsh-syntax-highlighting 安装完成"
     else
         print_success "zsh-syntax-highlighting 已存在"
-    fi
-    
-    # 自动补全插件
-    if [ ! -d "$plugins_dir/incr" ]; then
-        print_info "安装incr自动补全插件..."
-        local incr_file="/tmp/incr-0.2.zsh"
-        wget -O "$incr_file" http://mimosa-pudica.net/src/incr-0.2.zsh
-        mkdir -p "$plugins_dir/incr"
-        mv "$incr_file" "$plugins_dir/incr/"
-        chown -R "$REAL_USER:$REAL_USER" "$plugins_dir/incr"
-        print_success "incr自动补全插件安装完成"
-    else
-        print_success "incr自动补全插件已存在"
     fi
 }
 
@@ -219,6 +256,7 @@ show_completion_info() {
     print_info "安装的组件："
     echo "  ✅ ZSH shell"
     echo "  ✅ Oh My Zsh"
+    echo "  ✅ MesloLGS NF 字体"
     echo "  ✅ zsh-syntax-highlighting (语法高亮)" 
     echo "  ✅ incr (自动补全)"
     echo "  ✅ autojump (目录跳转)"
@@ -251,8 +289,8 @@ main() {
     
     # 配置zsh
     check_current_shell
-    install_zsh
     install_oh_my_zsh
+    install_fonts
     configure_zshrc
     install_zsh_plugins
     
