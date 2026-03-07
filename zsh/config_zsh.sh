@@ -12,6 +12,12 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
+# 全局变量
+OS_TYPE=""
+PKG_MANAGER_UPDATE=""
+PKG_MANAGER_INSTALL=""
+PKG_MANAGER_QUERY="" # For checking if package is installed
+
 # 打印函数
 print_info() {
     echo -e "${BLUE}[INFO]${NC} $1"
@@ -38,13 +44,36 @@ check_root() {
     fi
 }
 
-# 检查系统是否为Debian
-check_debian() {
-    if [ ! -f /etc/debian_version ]; then
-        print_error "此脚本仅支持Debian系统"
+# 检测操作系统并设置包管理器
+detect_os() {
+    if [ -f /etc/debian_version ]; then
+        OS_TYPE="debian"
+        PKG_MANAGER_UPDATE="apt-get update"
+        PKG_MANAGER_INSTALL="apt-get install -y"
+        PKG_MANAGER_QUERY="dpkg -l | grep -q '^ii  %s '"
+        print_success "检测到Debian系统"
+    elif [ -f /etc/arch-release ]; then
+        OS_TYPE="arch"
+        PKG_MANAGER_UPDATE="pacman -Sy"
+        PKG_MANAGER_INSTALL="pacman -S --noconfirm"
+        PKG_MANAGER_QUERY="pacman -Q %s"
+        print_success "检测到Arch Linux系统"
+    elif [ -f /etc/manjaro-release ]; then
+        OS_TYPE="manjaro"
+        PKG_MANAGER_UPDATE="pacman -Sy"
+        PKG_MANAGER_INSTALL="pacman -S --noconfirm"
+        PKG_MANAGER_QUERY="pacman -Q %s"
+        print_success "检测到Manjaro Linux系统"
+    elif [ -f /etc/openwrt_version ]; then
+        OS_TYPE="openwrt"
+        PKG_MANAGER_UPDATE="opkg update"
+        PKG_MANAGER_INSTALL="opkg install"
+        PKG_MANAGER_QUERY="opkg list-installed | grep -q '^%s -'"
+        print_success "检测到OpenWrt系统"
+    else
+        print_error "不支持的操作系统。此脚本仅支持Debian, Arch, Manjaro, OpenWrt。"
         exit 1
     fi
-    print_success "检测到Debian系统"
 }
 
 # 检查命令是否存在
@@ -54,7 +83,9 @@ command_exists() {
 
 # 检查包是否已安装
 package_installed() {
-    dpkg -l | grep -q "^ii  $1 " 2>/dev/null
+    local package=$1
+    local query_cmd=$(printf "$PKG_MANAGER_QUERY" "$package")
+    eval "$query_cmd" >/dev/null 2>&1
 }
 
 # 安装单个包
@@ -64,7 +95,12 @@ install_package() {
         print_success "$package 已安装"
     else
         print_info "正在安装 $package..."
-        apt-get install -y "$package"
+        # Special handling for autojump on Arch/Manjaro (uses autojump-zsh)
+        if [[ "$OS_TYPE" == "arch" || "$OS_TYPE" == "manjaro" ]] && [[ "$package" == "autojump" ]]; then
+            eval "$PKG_MANAGER_INSTALL autojump-zsh"
+        else
+            eval "$PKG_MANAGER_INSTALL $package"
+        fi
         print_success "$package 安装完成"
     fi
 }
@@ -75,20 +111,40 @@ install_dependencies() {
     
     # 更新包列表
     print_info "更新软件包列表..."
-    apt-get update
+    eval "$PKG_MANAGER_UPDATE"
     
     # 必需的软件包
-    local packages=(
-        "zsh"
-        "git" 
-        "curl"
-        "wget"
-        "autojump"
-        "fontconfig"
-    )
+    local packages=()
+    case "$OS_TYPE" in
+        debian|openwrt)
+            packages=(
+                "zsh"
+                "git" 
+                "curl"
+                "wget"
+                "autojump"
+                "fontconfig" # Not available on OpenWrt, will be skipped or handled
+            )
+            ;;
+        arch|manjaro)
+            packages=(
+                "zsh"
+                "git" 
+                "curl"
+                "wget"
+                "autojump" # Will be installed as autojump-zsh by install_package
+                "fontconfig"
+            )
+            ;;
+    esac
     
     # 安装软件包
     for package in "${packages[@]}"; do
+        # Skip fontconfig for OpenWrt as it's usually not relevant/available
+        if [[ "$OS_TYPE" == "openwrt" && "$package" == "fontconfig" ]]; then
+            print_warning "OpenWrt系统通常不需要或不提供fontconfig，跳过安装。"
+            continue
+        fi
         install_package "$package"
     done
     
@@ -129,14 +185,14 @@ install_zsh() {
         print_success "zsh 已安装"
     else
         print_info "正在安装zsh..."
-        apt-get install -y zsh
+        eval "$PKG_MANAGER_INSTALL zsh"
         print_success "zsh 安装完成"
     fi
 
     print_info "=== 配置ZSH ==="
     # 设置zsh为默认shell
     print_info "设置zsh为默认shell..."
-    chsh -s /bin/zsh "$REAL_USER"
+    chsh -s "$(command -v zsh)" "$REAL_USER"
     print_success "已设置zsh为 $REAL_USER 的默认shell"
     # 提醒注销重新打开终端
     print_warning "请注销并重新打开终端使zsh生效"
@@ -155,17 +211,24 @@ install_oh_my_zsh() {
     
     print_info "正在安装Oh My Zsh..."
     # 使用sudo -u切换到目标用户执行git clone
-    git clone https://github.com/robbyrussell/oh-my-zsh.git "$oh_my_zsh_dir"
+    # Note: This script is run as root, so git clone needs to be run as REAL_USER
+    sudo -u "$REAL_USER" git clone https://github.com/robbyrussell/oh-my-zsh.git "$oh_my_zsh_dir"
     print_success "Oh My Zsh 安装完成"
 
     # 安装powerlevel10k主题
     print_info "正在安装powerlevel10k主题..."
-    git clone https://github.com/romkatv/powerlevel10k.git "$oh_my_zsh_dir/themes/powerlevel10k"
+    sudo -u "$REAL_USER" git clone https://github.com/romkatv/powerlevel10k.git "$oh_my_zsh_dir/themes/powerlevel10k"
     print_success "powerlevel10k主题安装完成"
 }
 
 # 安装 MesloLGS NF 字体
 install_fonts() {
+    # Skip font installation for OpenWrt
+    if [ "$OS_TYPE" == "openwrt" ]; then
+        print_warning "OpenWrt系统通常不需要图形字体，跳过字体安装。"
+        return
+    fi
+
     print_info "=== 安装 MesloLGS NF 字体 ==="
     
     local font_dir="/usr/share/fonts/truetype/meslo"
@@ -192,20 +255,33 @@ install_fonts() {
 # 下载和配置.zshrc
 configure_zshrc() {
     print_info "=== 配置.zshrc ==="
-    
-    local github_url="https://raw.githubusercontent.com/ChaunceyXCX/my-config-files/master/zsh/.zshrc"
+
     local target_file="$REAL_HOME/.zshrc"
+
+    # OpenWrt：写入最小化配置，无需联网
+    if [ "$OS_TYPE" = "openwrt" ]; then
+        print_info "OpenWrt: 写入最小化 .zshrc..."
+        cat > "$target_file" <<'EOF'
+# OpenWrt minimal zshrc
+export TERM=xterm-256color
+autoload -Uz compinit && compinit
+PROMPT='%F{green}%n@%m%f:%F{blue}%~%f %# '
+EOF
+        chown "$REAL_USER:$REAL_USER" "$target_file" 2>/dev/null || true
+        print_success "最小化 .zshrc 配置完成"
+        return
+    fi
+
+    local github_url="https://raw.githubusercontent.com/ChaunceyXCX/my-config-files/master/zsh/.zshrc"
     local temp_file="/tmp/temp_zshrc"
-    
+
     # 下载配置文件
     print_info "下载zshrc配置文件..."
-    curl -o "$temp_file" "$github_url"
-    
-    if [ $? -ne 0 ]; then
+    if ! curl -fSL -o "$temp_file" "$github_url"; then
         print_error "zshrc配置文件下载失败"
         return 1
     fi
-    
+
     # 处理目标文件
     if [ ! -f "$target_file" ]; then
         print_info "$target_file 不存在，正在创建..."
@@ -213,14 +289,12 @@ configure_zshrc() {
     else
         print_info "$target_file 已存在，将追加内容"
     fi
-    
+
     # 插入文件内容
     cat "$temp_file" >> "$target_file"
     chown "$REAL_USER:$REAL_USER" "$target_file"
-    
-    # 删除临时文件
     rm "$temp_file"
-    
+
     print_success "zshrc配置完成"
 }
 
@@ -228,12 +302,13 @@ configure_zshrc() {
 install_zsh_plugins() {
     print_info "=== 安装ZSH插件 ==="
     
-    local plugins_dir="$REAL_HOME/.oh-my-zsh/plugins"
+    local plugins_dir="$REAL_HOME/.oh-my-zsh/custom/plugins" # Use custom plugins directory
+    mkdir -p "$plugins_dir" # Ensure directory exists
     
     # 自动提示插件
     if [ ! -d "$plugins_dir/zsh-autosuggestions" ]; then
         print_info "安装zsh-autosuggestions插件..."
-        git clone https://github.com/zsh-users/zsh-autosuggestions.git "$plugins_dir/zsh-autosuggestions"
+        sudo -u "$REAL_USER" git clone https://github.com/zsh-users/zsh-autosuggestions.git "$plugins_dir/zsh-autosuggestions"
         print_success "zsh-autosuggestions 安装完成"
     else
         print_success "zsh-autosuggestions 已存在"
@@ -242,7 +317,7 @@ install_zsh_plugins() {
     # 语法高亮插件
     if [ ! -d "$plugins_dir/zsh-syntax-highlighting" ]; then
         print_info "安装zsh-syntax-highlighting插件..."
-        git clone https://github.com/zsh-users/zsh-syntax-highlighting.git "$plugins_dir/zsh-syntax-highlighting"
+        sudo -u "$REAL_USER" git clone https://github.com/zsh-users/zsh-syntax-highlighting.git "$plugins_dir/zsh-syntax-highlighting"
         print_success "zsh-syntax-highlighting 安装完成"
     else
         print_success "zsh-syntax-highlighting 已存在"
@@ -256,9 +331,11 @@ show_completion_info() {
     print_info "安装的组件："
     echo "  ✅ ZSH shell"
     echo "  ✅ Oh My Zsh"
-    echo "  ✅ MesloLGS NF 字体"
+    if [ "$OS_TYPE" != "openwrt" ]; then
+        echo "  ✅ MesloLGS NF 字体"
+    fi
     echo "  ✅ zsh-syntax-highlighting (语法高亮)" 
-    echo "  ✅ incr (自动补全)"
+    echo "  ✅ zsh-autosuggestions (自动补全)" # Changed from 'incr' to 'zsh-autosuggestions'
     echo "  ✅ autojump (目录跳转)"
     echo
     print_warning "重要提醒："
@@ -276,27 +353,34 @@ show_completion_info() {
 main() {
     echo
     print_info "=== ZSH一键配置脚本 ==="
-    print_info "适用于Debian系统"
+    print_info "支持系统: Debian / Ubuntu / Arch / Manjaro / OpenWrt"
     echo
-    
-    # 检查系统
+
+    # 检查权限 & 检测系统
     check_root
-    check_debian
+    detect_os
     get_real_user
-    
+
     # 安装依赖
     install_dependencies
-    
-    # 配置zsh
-    check_current_shell
-    install_oh_my_zsh
-    install_fonts
+
+    # 配置 zsh 默认 shell
+    check_current_shell || true
+    install_zsh
+
+    # Oh My Zsh / 字体 / 插件（OpenWrt 跳过）
+    if [ "$OS_TYPE" != "openwrt" ]; then
+        install_oh_my_zsh
+        install_fonts
+        install_zsh_plugins
+    fi
+
+    # 写入 .zshrc
     configure_zshrc
-    install_zsh_plugins
-    
+
     # 显示完成信息
     show_completion_info
-    
+
     print_success "脚本执行完成！"
     print_info "请重新登录以使用zsh"
 }
