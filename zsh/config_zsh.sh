@@ -94,13 +94,7 @@ install_package() {
     if package_installed "$package"; then
         print_success "$package 已安装"
     else
-        print_info "正在安装 $package..."
-        # Special handling for autojump on Arch/Manjaro (uses autojump-zsh)
-        if [[ "$OS_TYPE" == "arch" || "$OS_TYPE" == "manjaro" ]] && [[ "$package" == "autojump" ]]; then
-            eval "$PKG_MANAGER_INSTALL autojump-zsh"
-        else
-            eval "$PKG_MANAGER_INSTALL $package"
-        fi
+        eval "$PKG_MANAGER_INSTALL $package"
         print_success "$package 安装完成"
     fi
 }
